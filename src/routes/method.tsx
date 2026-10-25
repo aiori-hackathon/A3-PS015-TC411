@@ -5,7 +5,7 @@ export const Route = createFileRoute("/method")({ component: MethodPage });
 
 function MethodPage() {
   return (
-    <article className="max-w-3xl space-y-8 text-sm leading-relaxed">
+    <article className="mx-auto max-w-3xl space-y-8 text-sm leading-relaxed">
       <header>
         <p className="font-mono text-xs tracking-widest text-accent">README</p>
         <h2 className="mt-2 text-2xl font-medium text-balance">How ProbeSpeak decides</h2>

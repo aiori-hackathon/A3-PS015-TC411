@@ -19,7 +19,7 @@ function AgentPage() {
   const busy = agent.state === "checking";
 
   return (
-    <article className="max-w-3xl space-y-8">
+    <article className="mx-auto max-w-3xl space-y-8">
       <header>
         <p className="font-mono text-xs tracking-widest text-accent">LOCAL AGENT</p>
         <h2 className="mt-2 text-2xl font-medium text-balance">Loopback only</h2>

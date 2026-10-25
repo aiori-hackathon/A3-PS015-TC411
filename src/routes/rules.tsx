@@ -15,7 +15,7 @@ function RulesPage() {
   const result = diagnose(example.before);
 
   return (
-    <article className="max-w-3xl space-y-8">
+    <article className="mx-auto max-w-3xl space-y-8">
       <header>
         <p className="font-mono text-xs tracking-widest text-accent">RULE ENGINE</p>
         <h2 className="mt-2 text-2xl font-medium text-balance">The same numbers, every time</h2>
