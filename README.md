@@ -3,6 +3,7 @@
 Team repository for AIORI-3. This tree is the ProbeSpeak console: last-mile fault diagnosis from evidence.
 
 Team introduction: https://youtu.be/bpURKXF7080
+website link: https://probespeak.vercel.app/
 
 ## Run
 
