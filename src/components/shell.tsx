@@ -29,7 +29,7 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="grid-fade min-h-dvh">
       <header className="no-print border-b border-line bg-bg/90 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:px-8">
+        <div className="flex w-full flex-col gap-4 px-4 py-4 lg:px-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex items-center gap-3">
@@ -74,7 +74,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6 md:px-8 md:py-8">{children}</main>
+      <main className="w-full px-4 py-5 lg:px-5 lg:py-6">{children}</main>
     </div>
   );
 }

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/report")({ component: ReportPage });
 function ReportPage() {
   const s = useSession();
   return (
-    <article className="max-w-3xl space-y-6">
+    <article className="mx-auto max-w-3xl space-y-6">
       <header>
         <p className="font-mono text-xs tracking-widest text-accent">VERIFICATION REPORT</p>
         <h2 className="mt-2 text-2xl font-medium">Latest run</h2>
