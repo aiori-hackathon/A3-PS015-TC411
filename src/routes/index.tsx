@@ -17,14 +17,17 @@ function Home() {
   const scenario = SCENARIOS.find((item) => item.id === s.scenarioId) ?? SCENARIOS[0]!;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-        <section className="border border-line bg-surface p-4">
+    <div className="grid gap-8 lg:grid-cols-[300px_minmax(0,1fr)]">
+      <aside className="lg:sticky lg:top-20 lg:self-start">
+        <section className="rounded-xl border border-line bg-surface p-4">
           <h2 className="text-sm font-medium">Run</h2>
-          <div className="mt-3 grid grid-cols-2 gap-2" role="group" aria-label="Measurement mode">
+          <div className="mt-3 grid grid-cols-2 gap-1 rounded-md bg-bg p-1" role="group" aria-label="Measurement mode">
             <button
               type="button"
-              className={cn("h-11 border text-sm", s.mode === "lab" ? "border-accent bg-accent text-accent-ink" : "border-line")}
+              className={cn(
+                "h-10 rounded-sm text-sm transition-colors duration-150",
+                s.mode === "lab" ? "bg-fg font-medium text-bg" : "text-muted",
+              )}
               onClick={() => s.setMode("lab")}
               disabled={s.busy || (s.phase !== "idle" && s.phase !== "complete")}
             >
@@ -32,7 +35,10 @@ function Home() {
             </button>
             <button
               type="button"
-              className={cn("h-11 border text-sm", s.mode === "live" ? "border-accent bg-accent text-accent-ink" : "border-line")}
+              className={cn(
+                "h-10 rounded-sm text-sm transition-colors duration-150",
+                s.mode === "live" ? "bg-fg font-medium text-bg" : "text-muted",
+              )}
               onClick={() => s.setMode("live")}
               disabled={s.busy || (s.phase !== "idle" && s.phase !== "complete")}
             >
@@ -54,8 +60,8 @@ function Home() {
                   disabled={s.busy || (s.phase !== "idle" && s.phase !== "complete")}
                   onClick={() => s.selectScenario(item.id)}
                   className={cn(
-                    "block w-full border px-3 py-3 text-left",
-                    item.id === s.scenarioId ? "border-accent bg-surface-2" : "border-line",
+                    "block w-full rounded-md px-3 py-3 text-left transition-colors duration-150",
+                    item.id === s.scenarioId ? "bg-surface-2" : "hover:bg-surface-2/60",
                   )}
                 >
                   <span className="block text-sm font-medium">{item.title}</span>
@@ -71,7 +77,7 @@ function Home() {
           <button
             type="button"
             data-testid="run-test"
-            className="mt-3 h-11 w-full bg-accent text-sm text-accent-ink disabled:opacity-60"
+            className="mt-3 h-11 w-full rounded-sm bg-fg text-sm font-medium text-bg disabled:opacity-60"
             onClick={() => void s.run()}
           >
             {s.busy ? "Running" : s.mode === "lab" ? "Run lab capture" : "Run live test"}
@@ -80,7 +86,7 @@ function Home() {
         {s.phase === "awaiting_permission" ? (
           <button
             type="button"
-            className="h-11 w-full border border-accent text-sm text-accent"
+            className="mt-3 h-11 w-full rounded-sm border border-line text-sm"
             onClick={() => s.setModal(true)}
           >
             Recovery is waiting for permission
@@ -88,7 +94,10 @@ function Home() {
         ) : null}
       </aside>
 
-      <div className="min-w-0 space-y-6">
+      <div className="min-w-0 space-y-8">
+        <p className="text-sm text-muted">
+          Measure, explain with evidence, ask permission, attempt a safe recovery, retest, verify.
+        </p>
         <section>
           <div className="mb-3 flex items-end justify-between gap-3">
             <h2 className="text-sm font-medium">Flow</h2>
@@ -128,14 +137,14 @@ function Home() {
           </section>
         ) : null}
 
-        <section className="border border-line bg-surface p-4">
+        <section className="rounded-xl border border-line bg-surface p-4">
           <h2 className="text-sm font-medium">Diagnosis</h2>
           {!s.diagnosis ? (
             <p className="mt-2 text-sm text-muted">The rule trace appears after the four records are in.</p>
           ) : (
             <>
-              <p className="mt-2 font-mono text-xs text-accent">{FINDING_LABEL[s.diagnosis.finding]}</p>
-              <p className="mt-2 max-w-3xl text-sm text-pretty">{s.diagnosis.summary}</p>
+              <p className="mt-2 text-sm font-medium">{FINDING_LABEL[s.diagnosis.finding]}</p>
+              <p className="mt-2 max-w-3xl text-sm text-pretty text-muted">{s.diagnosis.summary}</p>
               {s.diagnosis.reasons.length > 0 ? (
                 <ul className="mt-3 space-y-1 text-sm text-muted">
                   {s.diagnosis.reasons.map((reason) => (
@@ -145,7 +154,7 @@ function Home() {
               ) : null}
               <ol className="mt-4 space-y-2">
                 {s.diagnosis.trace.map((entry) => (
-                  <li key={entry.id} className="border border-line bg-bg px-3 py-2">
+                  <li key={entry.id} className="rounded-md bg-bg px-3 py-2">
                     <p className="font-mono text-xs text-muted">
                       {entry.outcome} · {entry.title}
                     </p>
@@ -171,7 +180,7 @@ function Home() {
         </section>
 
         {s.hints ? (
-          <section className="border border-line bg-bg p-4">
+          <section className="rounded-xl border border-line bg-bg p-4">
             <h2 className="text-sm font-medium">Browser hints</h2>
             <p className="mt-1 text-sm text-muted">Not used by the rule engine.</p>
             <dl className="mt-3 grid grid-cols-2 gap-3 font-mono text-sm sm:grid-cols-4">
@@ -195,7 +204,7 @@ function Home() {
           </section>
         ) : null}
 
-        <section className="border border-line bg-bg p-4">
+        <section className="rounded-xl border border-line bg-bg p-4">
           <h2 className="text-sm font-medium">Event log</h2>
           {s.events.length === 0 ? (
             <p className="mt-2 text-sm text-muted">Empty.</p>

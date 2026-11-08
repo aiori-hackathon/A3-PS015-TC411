@@ -48,9 +48,9 @@ export function PermissionModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="permit-title"
-        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto border border-line bg-surface p-5 shadow-none"
+        className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-xl border border-line bg-surface p-5"
       >
-        <p className="font-mono text-xs tracking-widest text-accent">{lab ? "LAB SIMULATION" : "LOCAL AGENT"}</p>
+        <p className="font-mono text-xs text-muted">{lab ? "Lab simulation" : "Local agent"}</p>
         <h2 id="permit-title" className="mt-2 text-xl font-medium text-balance">
           {action === "FIX_DNS" ? "Allow a reversible DNS change?" : "Allow a DHCP renew attempt?"}
         </h2>
@@ -74,12 +74,12 @@ export function PermissionModal({
           <button
             ref={denyRef}
             type="button"
-            className="h-11 flex-1 border border-line bg-bg px-4 text-sm"
+            className="h-11 flex-1 rounded-sm border border-line bg-bg px-4 text-sm"
             onClick={onDeny}
           >
             Do not change anything
           </button>
-          <button type="button" className="h-11 flex-1 bg-accent px-4 text-sm text-accent-ink" onClick={onAllow}>
+          <button type="button" className="h-11 flex-1 rounded-sm bg-accent px-4 text-sm font-medium text-accent-ink" onClick={onAllow}>
             {lab ? "Run lab simulation" : `Allow ${action}`}
           </button>
         </div>

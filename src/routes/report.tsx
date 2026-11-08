@@ -11,7 +11,7 @@ function ReportPage() {
   return (
     <article className="mx-auto max-w-3xl space-y-6">
       <header>
-        <p className="font-mono text-xs tracking-widest text-accent">VERIFICATION REPORT</p>
+        <p className="font-mono text-xs text-muted">Verification report</p>
         <h2 className="mt-2 text-2xl font-medium">Latest run</h2>
         <p className="mt-2 text-sm text-muted">
           {s.runId ? s.runId : "No run in this session."}{" "}
@@ -19,19 +19,19 @@ function ReportPage() {
         </p>
       </header>
       {!s.diagnosis ? (
-        <p className="border border-line bg-surface p-4 text-sm">
-          Nothing to report. <Link to="/" className="text-accent">Run a capture</Link> first. An empty page is not a pass.
+        <p className="rounded-xl border border-line bg-surface p-4 text-sm">
+          Nothing to report. <Link to="/" className="underline">Run a capture</Link> first. An empty page is not a pass.
         </p>
       ) : (
         <>
           <VerdictPanel />
-          <section className="border border-line p-4">
+          <section className="rounded-xl border border-line p-4">
             <h3 className="text-sm font-medium">Finding before any recovery</h3>
             <p className="mt-2 text-sm">{FINDING_LABEL[s.diagnosis.finding]}</p>
             <p className="mt-2 text-sm text-pretty text-muted">{s.diagnosis.summary}</p>
           </section>
           {s.afterDiagnosis ? (
-            <section className="border border-line p-4">
+            <section className="rounded-xl border border-line p-4">
               <h3 className="text-sm font-medium">Retest finding</h3>
               <p className="mt-2 text-sm">{FINDING_LABEL[s.afterDiagnosis.finding]}</p>
               <p className="mt-2 text-sm text-pretty text-muted">{s.afterDiagnosis.summary}</p>

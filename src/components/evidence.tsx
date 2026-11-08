@@ -3,16 +3,16 @@ import { lossPercent } from "@/lib/engine/stats";
 import { cn } from "@/lib/utils";
 
 const BAND_CLASS: Record<Band, string> = {
-  pass: "text-pass border-pass/40",
-  fail: "text-fail border-fail/40",
-  degraded: "text-accent border-accent/40",
-  insufficient: "text-muted border-line",
-  timeout: "text-fail border-fail/40",
+  pass: "text-pass",
+  fail: "text-fail",
+  degraded: "text-warn",
+  insufficient: "text-muted",
+  timeout: "text-fail",
 };
 
 function Pill({ band }: { band: Band }) {
   const label = band === "timeout" ? "Timeout" : band[0]!.toUpperCase() + band.slice(1);
-  return <span className={cn("border px-2 py-1 font-mono text-xs uppercase", BAND_CLASS[band])}>{label}</span>;
+  return <span className={cn("font-mono text-xs uppercase tracking-wide", BAND_CLASS[band])}>{label}</span>;
 }
 
 function Row({ k, v }: { k: string; v: string }) {
@@ -42,7 +42,7 @@ export function EvidenceGrid({
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {ids.map((id) => (
-        <article key={id} className="min-w-0 border border-line bg-surface p-4">
+        <article key={id} className="min-w-0 rounded-xl border border-line bg-surface p-4">
           <header className="mb-3 flex items-start justify-between gap-3">
             <h3 className="text-sm font-medium">{CHECK_LABEL[id]}</h3>
             {revealed[id] && checks ? <Pill band={checks[id].band} /> : null}
@@ -159,7 +159,7 @@ function Raw({ value }: { value: unknown }) {
   return (
     <details className="mt-3">
       <summary className="cursor-pointer font-mono text-xs text-muted">Raw values</summary>
-      <pre className="mt-2 overflow-x-auto border border-line bg-bg p-3 font-mono text-xs leading-relaxed text-fg">
+      <pre className="mt-2 overflow-x-auto rounded-md bg-bg p-3 font-mono text-xs leading-relaxed text-fg">
         {JSON.stringify(value, null, 2)}
       </pre>
     </details>

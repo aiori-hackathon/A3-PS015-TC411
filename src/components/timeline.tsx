@@ -25,14 +25,18 @@ export function FlowTimeline({
 }) {
   const tones = tonesFor(phase, diagnosis, permission, hasAfter);
   return (
-    <ol className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+    <ol className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-5">
       {STEPS.map(([id, label], index) => {
         const tone = tones[id];
         return (
-          <li key={id} className={cn("border px-3 py-3", toneClass(tone))} aria-current={tone === "active" ? "step" : undefined}>
+          <li
+            key={id}
+            className="bg-surface px-4 py-3"
+            aria-current={tone === "active" ? "step" : undefined}
+          >
             <p className="font-mono text-xs text-faint">0{index + 1}</p>
             <p className="mt-1 text-sm font-medium">{label}</p>
-            <p className="font-mono text-xs uppercase text-muted">{tone}</p>
+            <p className={cn("mt-1 font-mono text-xs", toneText(tone))}>{tone}</p>
           </li>
         );
       })}
@@ -79,10 +83,9 @@ function tonesFor(
   return { measure, diagnose, permission: perm, recover, retest };
 }
 
-function toneClass(tone: Tone): string {
-  if (tone === "active") return "border-accent bg-surface-2";
-  if (tone === "done") return "border-pass/40 bg-surface";
-  if (tone === "denied") return "border-fail/40 bg-surface";
-  if (tone === "skipped") return "border-line bg-bg text-muted";
-  return "border-line bg-surface";
+function toneText(tone: Tone): string {
+  if (tone === "active") return "text-fg";
+  if (tone === "done") return "text-pass";
+  if (tone === "denied") return "text-fail";
+  return "text-faint";
 }

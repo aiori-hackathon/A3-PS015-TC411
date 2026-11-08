@@ -7,7 +7,7 @@ function MethodPage() {
   return (
     <article className="mx-auto max-w-3xl space-y-8 text-sm leading-relaxed">
       <header>
-        <p className="font-mono text-xs tracking-widest text-accent">README</p>
+        <p className="font-mono text-xs text-muted">Method</p>
         <h2 className="mt-2 text-2xl font-medium text-balance">How ProbeSpeak decides</h2>
         <p className="mt-3 text-pretty text-muted">
           PS-015 is a last-mile diagnosis console. It measures four things, explains the rule that fired, asks before any change, retries a safe action, retests, and only then uses the word Resolved.
