@@ -20,7 +20,7 @@ export function ChartPanel(props: {
     };
   }, []);
   if (!Charts) {
-    return <div className="h-64 border border-line bg-surface" aria-hidden="true" />;
+    return <div className="h-64 rounded-xl border border-line bg-surface" aria-hidden="true" />;
   }
   return <Charts {...props} />;
 }

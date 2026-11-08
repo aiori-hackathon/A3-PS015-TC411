@@ -13,13 +13,13 @@ const NAV = [
 ] as const;
 
 const TONE: Record<string, string> = {
-  connected: "text-pass border-pass/40",
-  starting: "text-accent border-accent/40",
-  permission_blocked: "text-accent border-accent/40",
-  unavailable: "text-fail border-fail/40",
-  not_installed: "text-muted border-line",
-  checking: "text-muted border-line",
-  unchecked: "text-muted border-line",
+  connected: "text-pass",
+  starting: "text-warn",
+  permission_blocked: "text-warn",
+  unavailable: "text-fail",
+  not_installed: "text-muted",
+  checking: "text-muted",
+  unchecked: "text-muted",
 };
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -27,35 +27,19 @@ export function Shell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <div className="grid-fade min-h-dvh">
-      <header className="no-print border-b border-line bg-bg/90 backdrop-blur-sm">
-        <div className="flex w-full flex-col gap-4 px-4 py-4 lg:px-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <span className="grid size-9 shrink-0 place-items-center border border-accent/50 font-mono text-xs text-accent">
-                  PS
-                </span>
-                <div>
-                  <p className="font-mono text-xs tracking-widest text-accent">PS-015</p>
-                  <h1 className="text-lg font-medium leading-tight tracking-tight">ProbeSpeak</h1>
-                </div>
-              </div>
-              <p className="mt-2 max-w-xl text-sm text-muted text-pretty">
-                Measure, explain with evidence, ask permission, attempt a safe recovery, retest, verify.
-              </p>
-            </div>
-            <Link
-              to="/agent"
-              className={cn(
-                "inline-flex h-11 shrink-0 items-center border px-3 font-mono text-xs",
-                TONE[agent.state] ?? TONE.unchecked,
-              )}
-            >
-              {agent.state === "checking" ? "Checking agent" : AGENT_STATE_LABEL[agent.state]}
-            </Link>
-          </div>
-          <nav className="flex gap-2 overflow-x-auto" aria-label="Primary">
+    <div className="min-h-dvh bg-bg">
+      <header className="no-print sticky top-0 z-20 border-b border-line bg-bg">
+        <div className="flex w-full items-center gap-4 px-4 py-3 lg:gap-8 lg:px-6">
+          <Link to="/" className="flex shrink-0 items-center gap-3">
+            <span className="grid size-8 place-items-center rounded-sm bg-fg font-mono text-xs font-medium text-bg">
+              PS
+            </span>
+            <span className="leading-tight">
+              <span className="block text-sm font-medium tracking-tight">ProbeSpeak</span>
+              <span className="block font-mono text-xs text-muted">PS-015</span>
+            </span>
+          </Link>
+          <nav className="flex min-w-0 flex-1 gap-1 overflow-x-auto" aria-label="Primary">
             {NAV.map((item) => {
               const active = item.to === "/" ? path === "/" : path.startsWith(item.to);
               return (
@@ -63,8 +47,8 @@ export function Shell({ children }: { children: ReactNode }) {
                   key={item.to}
                   to={item.to}
                   className={cn(
-                    "inline-flex h-11 items-center border px-3 text-sm",
-                    active ? "border-accent bg-accent text-accent-ink" : "border-line bg-surface text-fg",
+                    "inline-flex h-9 shrink-0 items-center rounded-sm px-3 text-sm transition-colors duration-150",
+                    active ? "bg-surface-2 text-fg" : "text-muted hover:text-fg",
                   )}
                 >
                   {item.label}
@@ -72,9 +56,18 @@ export function Shell({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
+          <Link
+            to="/agent"
+            className={cn(
+              "inline-flex h-9 shrink-0 items-center rounded-sm border border-line px-3 font-mono text-xs",
+              TONE[agent.state] ?? TONE.unchecked,
+            )}
+          >
+            {agent.state === "checking" ? "Checking agent" : AGENT_STATE_LABEL[agent.state]}
+          </Link>
         </div>
       </header>
-      <main className="w-full px-4 py-5 lg:px-5 lg:py-6">{children}</main>
+      <main className="w-full px-4 py-6 lg:px-6 lg:py-8">{children}</main>
     </div>
   );
 }

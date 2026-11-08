@@ -17,7 +17,7 @@ function RulesPage() {
   return (
     <article className="mx-auto max-w-3xl space-y-8">
       <header>
-        <p className="font-mono text-xs tracking-widest text-accent">RULE ENGINE</p>
+        <p className="font-mono text-xs text-muted">Rule engine</p>
         <h2 className="mt-2 text-2xl font-medium text-balance">The same numbers, every time</h2>
         <p className="mt-3 text-pretty text-muted">
           Classification and diagnosis are pure functions of the measurement document. They do not call the network, and they never return Resolved. That word is reserved for a later retest that passes every check.
@@ -26,7 +26,7 @@ function RulesPage() {
 
       <section className="space-y-3">
         <h3 className="text-lg font-medium">Thresholds</h3>
-        <div className="overflow-x-auto border border-line">
+        <div className="overflow-x-auto rounded-xl border border-line">
           <table className="w-full min-w-[36rem] text-left text-sm">
             <thead className="bg-surface font-mono text-xs text-muted">
               <tr>
@@ -76,36 +76,36 @@ function RulesPage() {
       <section className="space-y-3">
         <h3 className="text-lg font-medium">Decision order</h3>
         <ol className="space-y-3 text-sm">
-          <li className="border border-line bg-surface p-4">
-            <span className="font-mono text-xs text-accent">1</span>
+          <li className="rounded-xl border border-line bg-surface p-4">
+            <span className="font-mono text-xs text-muted">1</span>
             <p className="mt-1">If any check is insufficient, or the records contradict each other, stop. Finding: none. Status: Inconclusive.</p>
           </li>
-          <li className="border border-line bg-surface p-4">
-            <span className="font-mono text-xs text-accent">2</span>
+          <li className="rounded-xl border border-line bg-surface p-4">
+            <span className="font-mono text-xs text-muted">2</span>
             <p className="mt-1">If all four pass: no fault observed. This is not Resolved.</p>
           </li>
-          <li className="border border-line bg-surface p-4">
-            <span className="font-mono text-xs text-accent">3</span>
+          <li className="rounded-xl border border-line bg-surface p-4">
+            <span className="font-mono text-xs text-muted">3</span>
             <p className="mt-1">
               Gateway answered nothing, fresh DNS failed, loss is at least {p.constellationAtLeastPct}%, and both latency sides timed out. One pattern: gateway unreachable. Optional attempt: RENEW_DHCP, which is not claimed as the cause.
             </p>
           </li>
-          <li className="border border-line bg-surface p-4">
-            <span className="font-mono text-xs text-accent">4</span>
+          <li className="rounded-xl border border-line bg-surface p-4">
+            <span className="font-mono text-xs text-muted">4</span>
             <p className="mt-1">DNS failed and the other three passed. Optional attempt: FIX_DNS, kept only if the retest is clean, otherwise rolled back.</p>
           </li>
-          <li className="border border-line bg-surface p-4">
-            <span className="font-mono text-xs text-accent">5</span>
+          <li className="rounded-xl border border-line bg-surface p-4">
+            <span className="font-mono text-xs text-muted">5</span>
             <p className="mt-1">
               Loss above {p.failAbovePct}% and below {p.ambiguousWithHealthyPathPct}%, with the other three passing. Report the loss. Do not offer a local fix, because the hop is not known.
             </p>
           </li>
-          <li className="border border-line bg-surface p-4">
-            <span className="font-mono text-xs text-accent">6</span>
+          <li className="rounded-xl border border-line bg-surface p-4">
+            <span className="font-mono text-xs text-muted">6</span>
             <p className="mt-1">Loaded-latency fail signature with the other three passing. Report it. Do not offer DNS or DHCP.</p>
           </li>
-          <li className="border border-line bg-surface p-4">
-            <span className="font-mono text-xs text-accent">7</span>
+          <li className="rounded-xl border border-line bg-surface p-4">
+            <span className="font-mono text-xs text-muted">7</span>
             <p className="mt-1">Anything else — two fault signals, a fail next to a degraded check, or only elevated values — is Inconclusive.</p>
           </li>
         </ol>
@@ -118,7 +118,7 @@ function RulesPage() {
         </p>
         <ol className="space-y-2">
           {result.trace.map((entry) => (
-            <li key={entry.id} className="border border-line px-3 py-2">
+            <li key={entry.id} className="rounded-md border border-line px-3 py-2">
               <p className="font-mono text-xs text-muted">
                 {entry.outcome} · {entry.title}
               </p>

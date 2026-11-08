@@ -4,21 +4,23 @@
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-  --color-bg: #101418;
-  --color-surface: #171d22;
-  --color-surface-2: #1e262c;
-  --color-line: #2c3640;
-  --color-fg: #e7eeea;
-  --color-muted: #8e9a96;
-  --color-faint: #66706c;
-  --color-accent: #e09a3e;
-  --color-accent-ink: #1c1308;
-  --color-pass: #3cba78;
-  --color-fail: #e15b4a;
-  --color-grid: #1a2127;
+  --color-bg: #0b0c0e;
+  --color-surface: #121417;
+  --color-surface-2: #191c20;
+  --color-line: #2a2e34;
+  --color-fg: #f4f5f6;
+  --color-muted: #9aa1aa;
+  --color-faint: #6d747d;
+  --color-accent: #f4f5f6;
+  --color-accent-ink: #0b0c0e;
+  --color-pass: #3dbe86;
+  --color-fail: #e26d5c;
+  --color-warn: #d4a24a;
 
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 }
 
 @layer base {
@@ -43,22 +45,14 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--color-fg);
     outline-offset: 2px;
   }
 
   ::selection {
-    background: var(--color-accent);
-    color: var(--color-accent-ink);
+    background: var(--color-fg);
+    color: var(--color-bg);
   }
-}
-
-@utility grid-fade {
-  background-image:
-    linear-gradient(var(--color-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
-  background-size: 32px 32px;
-  background-position: -1px -1px;
 }
 
 @media (prefers-reduced-motion: reduce) {

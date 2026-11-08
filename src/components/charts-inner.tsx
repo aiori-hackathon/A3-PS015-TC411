@@ -66,7 +66,7 @@ export function Charts({
 function Chart({ title, unit, data }: { title: string; unit: string; data: { name: string; value: number | null }[] }) {
   const empty = data.every((d) => d.value == null);
   return (
-    <section className="border border-line bg-surface p-4">
+    <section className="rounded-xl border border-line bg-surface p-4">
       <h3 className="text-sm font-medium">{title}</h3>
       <p className="mb-3 font-mono text-xs text-muted">{unit}. Missing bars were not accepted, not zero.</p>
       {empty ? (
@@ -83,7 +83,7 @@ function Chart({ title, unit, data }: { title: string; unit: string; data: { nam
                 contentStyle={{
                   background: "var(--color-surface)",
                   border: "1px solid var(--color-line)",
-                  borderRadius: 4,
+                  borderRadius: 8,
                   color: "var(--color-fg)",
                 }}
               />
@@ -103,7 +103,7 @@ function LatencyChart({
 }) {
   const empty = data.every((d) => d.before == null && d.after == null);
   return (
-    <section className="border border-line bg-surface p-4">
+    <section className="rounded-xl border border-line bg-surface p-4">
       <h3 className="text-sm font-medium">Latency</h3>
       <p className="mb-3 font-mono text-xs text-muted">ms. After appears only when a retest exists.</p>
       {empty ? (
@@ -120,7 +120,7 @@ function LatencyChart({
                 contentStyle={{
                   background: "var(--color-surface)",
                   border: "1px solid var(--color-line)",
-                  borderRadius: 4,
+                  borderRadius: 8,
                   color: "var(--color-fg)",
                 }}
               />
