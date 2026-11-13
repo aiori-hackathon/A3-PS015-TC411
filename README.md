@@ -40,6 +40,9 @@ The order is fixed: measure, explain with evidence, ask permission, attempt a sa
 
 ## Agent
 
+A full Python measuring-and-recovery agent lives in [`agent/`](agent/README.md). The `public/probespeak-agent.mjs` below is the minimal reference process.
+
+
 Allowlist: `VERIFY_DNS`, `FIX_DNS`, `RESTORE_DNS`, `VERIFY_GATEWAY`, `RENEW_DHCP`, `RECONNECT_NETWORK`, `VERIFY_PACKET_LOSS`, `RETEST`.
 
 DNS recovery must verify the failure, save the current resolvers, apply `1.1.1.1` and `1.0.0.1`, flush, retest, keep only on a clean retest, and roll back otherwise. No arbitrary shell commands.
