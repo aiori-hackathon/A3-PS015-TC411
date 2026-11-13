@@ -135,7 +135,21 @@ export function appliedDnsIsExpected(applied: string[] | null): boolean {
   return RECOVERY_DNS.every((ip, i) => applied[i] === ip);
 }
 
-export async function callAgent(action: AllowedAction, timeoutMs = 8000): Promise<AgentActionResult> {
+export const ACTION_TIMEOUT_MS: Record<AllowedAction, number> = {
+  VERIFY_DNS: 15000,
+  VERIFY_GATEWAY: 15000,
+  VERIFY_PACKET_LOSS: 20000,
+  RETEST: 60000,
+  FIX_DNS: 30000,
+  RESTORE_DNS: 30000,
+  RENEW_DHCP: 90000,
+  RECONNECT_NETWORK: 90000,
+};
+
+export async function callAgent(
+  action: AllowedAction,
+  timeoutMs: number = ACTION_TIMEOUT_MS[action] ?? 8000,
+): Promise<AgentActionResult> {
   if (!(ALLOWED_ACTIONS as readonly string[]).includes(action)) {
     throw new AgentError("Refused: action is not allowlisted.");
   }
