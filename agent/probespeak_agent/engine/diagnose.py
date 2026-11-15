@@ -48,8 +48,13 @@ def diagnose(s):
 
     missing = [f"{c['id']}: {c['detail']}" for c in ck.values() if c["band"] == "insufficient"]
     conflicts = _contradictions(s, ck)
+    dns_despite_load = (
+        ck["dns"]["band"] == "fail" and ck["gateway"]["band"] == "pass"
+        and ck["packet_loss"]["band"] == "pass" and ck["congestion"]["band"] == "insufficient"
+        and ck["congestion"]["detail"].startswith("Load generator moved only")
+        and len(missing) == 1 and not conflicts)
 
-    if missing or conflicts:
+    if (missing or conflicts) and not dns_despite_load:
         reasons = missing + conflicts
         msg = "Not evaluated. Evidence is incomplete or in conflict."
         for id_, title in [("rule.healthy","All four pass"),("rule.gateway","Gateway-unreachable constellation"),
@@ -87,13 +92,15 @@ def diagnose(s):
     skip("rule.gateway", "Gateway-unreachable constellation", "The four-way outage pattern was not present.")
 
     b = {k: v["band"] for k, v in ck.items()}
-    if b["dns"] == "fail" and b["gateway"] == "pass" and b["packet_loss"] == "pass" and b["congestion"] == "pass":
+    if dns_despite_load or (b["dns"] == "fail" and b["gateway"] == "pass" and b["packet_loss"] == "pass" and b["congestion"] == "pass"):
         trace.append({"id": "rule.dns", "title": "Isolated DNS resolver failure", "outcome": "fired",
-                      "detail": "The fresh lookup failed while gateway, loss, and loaded latency all passed."})
+                      "detail": "The fresh lookup failed. Gateway and loss passed."
+                      + (" The loaded-latency download collected no bytes, so it is not a second cause." if dns_despite_load
+                         else " Loaded latency also passed.")})
         skip("rule.loss", "Isolated packet loss", "DNS pattern already matched.")
         skip("rule.latency", "Isolated loaded-latency inflation", "DNS pattern already matched.")
         return _r("DNS_RESOLVER_FAILURE", "unresolved", "FIX_DNS",
-                  "A fresh lookup failed and the other three checks passed. "
+                  "A fresh lookup failed and the path checks that completed did not explain it. "
                   "A reversible resolver change can be attempted. Kept only if a full retest passes.",
                   [], ck, trace)
     skip("rule.dns", "Isolated DNS resolver failure", "DNS is not a lone fail against three passing checks.")

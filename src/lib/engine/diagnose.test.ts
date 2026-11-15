@@ -56,6 +56,16 @@ test("resolved is impossible unless the retest is clean", () => {
   assert.equal(gwFail.rollback, false);
 });
 
+test("a dead resolver is still named when the download moves no bytes", () => {
+  const scenario = SCENARIOS.find((s) => s.id === "dns-fix-verifies")!;
+  const set = structuredClone(scenario.before);
+  set.congestion.insufficientReason =
+    "Load generator moved only 0 bytes (needs 1000000). Loaded samples not valid.";
+  const d = diagnose(set);
+  assert.equal(d.finding, "DNS_RESOLVER_FAILURE");
+  assert.equal(d.recovery, "FIX_DNS");
+});
+
 test("a tampered loss percentage is not diagnosed", () => {
   const scenario = SCENARIOS.find((s) => s.id === "mid-loss")!;
   const tampered = structuredClone(scenario.before);

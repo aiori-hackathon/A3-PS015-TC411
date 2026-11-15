@@ -38,6 +38,15 @@ def test_claims_policy_no_forbidden_words():
         for bad in FORBIDDEN:
             assert bad not in text, f"{sc.id} contains '{bad}'"
 
+def test_dns_failure_with_empty_load_offers_fix():
+    import dataclasses
+    s = scenario_by_id("dns-fix-verifies").before
+    reason = "Load generator moved only 0 bytes (needs 1000000). Loaded samples not valid."
+    broken = dataclasses.replace(s, congestion=dataclasses.replace(s.congestion, insufficient_reason=reason))
+    d = diagnose(broken)
+    assert d["finding"] == "DNS_RESOLVER_FAILURE"
+    assert d["recovery"] == "FIX_DNS"
+
 def test_missing_instrument_gives_inconclusive():
     s = scenario_by_id("clean-fiber").before
     broken = dataclasses.replace(s, packet_loss=dataclasses.replace(s.packet_loss, insufficient_reason="ping unusable"))
