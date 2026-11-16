@@ -38,6 +38,15 @@ def test_claims_policy_no_forbidden_words():
         for bad in FORBIDDEN:
             assert bad not in text, f"{sc.id} contains '{bad}'"
 
+def test_dns_failure_with_latency_timeout_offers_fix():
+    import dataclasses
+    from probespeak_agent.scenarios import cong_timeout
+    s = scenario_by_id("dns-fix-verifies").before
+    broken = dataclasses.replace(s, congestion=cong_timeout(s.captured_at, 6))
+    d = diagnose(broken)
+    assert d["finding"] == "DNS_RESOLVER_FAILURE"
+    assert d["recovery"] == "FIX_DNS"
+
 def test_dns_failure_with_empty_load_offers_fix():
     import dataclasses
     s = scenario_by_id("dns-fix-verifies").before
