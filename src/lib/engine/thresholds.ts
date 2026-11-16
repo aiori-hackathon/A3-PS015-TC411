@@ -21,7 +21,7 @@ export const THRESHOLDS = {
     minSent: 20,
     /** Fail when loss percent is strictly above this. */
     failAbovePct: 5,
-    degradedAbovePct: 1,
+    degradedAbovePct: 5,
     /**
      * At or above this loss, a still-healthy DNS and latency path is treated as
      * ambiguous (ICMP filter can look like total loss). Not used as a cause.

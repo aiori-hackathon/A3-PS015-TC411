@@ -18,7 +18,17 @@ def tcp_rtt(host=TARGET, port=PORT, timeout_s=CONNECT_TIMEOUT_S):
     try:
         with socket.create_connection((host, port), timeout=timeout_s): pass
     except ConnectionRefusedError: pass
-    except OSError: return None
+    except OSError:
+        # Port 443 can be filtered while ping still answers. Use that delay
+        # instead of reporting a timeout with no number.
+        try:
+            from .ping import ping_once
+            from ..runner import Runner
+            reply = ping_once(Runner(), host, timeout_s=1.0)
+        except Exception:
+            return None
+        if not reply.ok or reply.rtt_ms is None: return None
+        return round(reply.rtt_ms, 1)
     return round((time.perf_counter() - t0) * 1000, 1)
 
 def _series(n, probe=tcp_rtt):
