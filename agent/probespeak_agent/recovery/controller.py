@@ -50,7 +50,9 @@ class RecoveryController:
         if not self._fresh(self._dns_fail_at):
             raise Refused("FIX_DNS refused. No DNS failure confirmed in the last 120 s. Run VERIFY_DNS first.")
         if self.store.load() is not None:
-            raise Refused("FIX_DNS refused. An earlier DNS change has not been restored. Send RESTORE_DNS first.")
+            self.restore_dns()
+            if self.store.load() is not None:
+                raise Refused("FIX_DNS refused. An earlier DNS change could not be restored.")
         backend = self._backend_factory(); log = []
         try: before = backend.read()
         except BackendError as e: raise Refused(f"FIX_DNS refused. {e}")

@@ -14,22 +14,27 @@ ATTEMPTS = 6; CONNECT_TIMEOUT_S = 1.0; SPACING_S = 0.2
 LOAD_STREAMS = 4; RAMP_S = 1.2; MIN_LOAD_BYTES = 1_000_000; MAX_LOAD_S = 15
 
 def tcp_rtt(host=TARGET, port=PORT, timeout_s=CONNECT_TIMEOUT_S):
+    # After the first blocked connection, do not wait another second on every sample.
+    if getattr(tcp_rtt, "use_ping", False):
+        return _ping_rtt(host)
     t0 = time.perf_counter()
     try:
         with socket.create_connection((host, port), timeout=timeout_s): pass
     except ConnectionRefusedError: pass
     except OSError:
-        # Port 443 can be filtered while ping still answers. Use that delay
-        # instead of reporting a timeout with no number.
-        try:
-            from .ping import ping_once
-            from ..runner import Runner
-            reply = ping_once(Runner(), host, timeout_s=1.0)
-        except Exception:
-            return None
-        if not reply.ok or reply.rtt_ms is None: return None
-        return round(reply.rtt_ms, 1)
+        tcp_rtt.use_ping = True
+        return _ping_rtt(host)
     return round((time.perf_counter() - t0) * 1000, 1)
+
+def _ping_rtt(host):
+    try:
+        from .ping import ping_once
+        from ..runner import Runner
+        reply = ping_once(Runner(), host, timeout_s=1.0)
+    except Exception:
+        return None
+    if not reply.ok or reply.rtt_ms is None: return None
+    return round(reply.rtt_ms, 1)
 
 def _series(n, probe=tcp_rtt):
     got, timeouts = [], 0
@@ -81,6 +86,7 @@ def blank(reason):
                                  reason, TARGET, None, None, None, None, None, None, None, None, [], [])
 
 def measure(probe=tcp_rtt, load_factory=Load, attempts=ATTEMPTS):
+    tcp_rtt.use_ping = False
     at = _iso(); unloaded, ut = _series(attempts, probe)
     load = load_factory()
     with load:
