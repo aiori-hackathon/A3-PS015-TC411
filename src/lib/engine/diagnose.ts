@@ -108,15 +108,22 @@ export function diagnose(set: MeasurementSet): Diagnosis {
 
   const missing = insufficientReasons(checks);
   const conflicts = contradictions(set, checks);
-  // The download can move 0 bytes because name lookup is already dead.
-  // Gateway and loss still show the path is up, so the lookup failure can be named.
-  const dnsFault = checks.dns.band === "fail" && checks.gateway.band === "pass";
+  const routerAnswered =
+    checks.gateway.band === "pass" || checks.gateway.band === "degraded";
+  const lossNotFailed =
+    checks.packet_loss.band === "pass" || checks.packet_loss.band === "degraded";
+  const dnsFault = checks.dns.band === "fail" && routerAnswered;
+  const pathFine =
+    checks.dns.band === "pass" &&
+    routerAnswered &&
+    lossNotFailed &&
+    checks.congestion.band !== "fail";
 
   const skip = (id: string, title: string, detail: string) => {
     trace.push({ id, title, detail, outcome: "skipped" });
   };
 
-  if ((missing.length > 0 || conflicts.length > 0) && !dnsFault) {
+  if ((missing.length > 0 || conflicts.length > 0) && !dnsFault && !pathFine) {
     const reasons = [...missing, ...conflicts];
     skip("rule.healthy", "All four pass", "Not evaluated. Evidence is incomplete or in conflict.");
     skip("rule.gateway", "Gateway-unreachable constellation", "Not evaluated. Evidence is incomplete or in conflict.");
@@ -160,6 +167,30 @@ export function diagnose(set: MeasurementSet): Diagnosis {
       recovery: null,
       summary:
         "All four checks passed their thresholds. Nothing was repaired, so this is not a Resolved result.",
+      reasons: [],
+      checks,
+      trace,
+    });
+  }
+
+  if (pathFine) {
+    trace.push({
+      id: "rule.healthy",
+      title: "Lookup succeeded",
+      detail:
+        "The name lookup succeeded and the router answered. Packet loss is not above the fail line. A timed-out latency check is not treated as a second fault.",
+      outcome: "fired",
+    });
+    skip("rule.gateway", "Gateway-unreachable constellation", "Not reached.");
+    skip("rule.dns", "Isolated DNS resolver failure", "Not reached.");
+    skip("rule.loss", "Isolated packet loss", "Not reached.");
+    skip("rule.latency", "Isolated loaded-latency inflation", "Not reached.");
+    return build({
+      finding: "NO_FAULT",
+      preliminary: "no_fault_observed",
+      recovery: null,
+      summary:
+        "The name lookup succeeded and the router answered. Nothing was repaired, so this is not a Resolved result.",
       reasons: [],
       checks,
       trace,

@@ -48,9 +48,13 @@ def diagnose(s):
 
     missing = [f"{c['id']}: {c['detail']}" for c in ck.values() if c["band"] == "insufficient"]
     conflicts = _contradictions(s, ck)
-    dns_fault = ck["dns"]["band"] == "fail" and ck["gateway"]["band"] == "pass"
+    router_answered = ck["gateway"]["band"] in ("pass", "degraded")
+    loss_ok = ck["packet_loss"]["band"] in ("pass", "degraded")
+    dns_fault = ck["dns"]["band"] == "fail" and router_answered
+    path_fine = (ck["dns"]["band"] == "pass" and router_answered and loss_ok
+                 and ck["congestion"]["band"] != "fail")
 
-    if (missing or conflicts) and not dns_fault:
+    if (missing or conflicts) and not dns_fault and not path_fine:
         reasons = missing + conflicts
         msg = "Not evaluated. Evidence is incomplete or in conflict."
         for id_, title in [("rule.healthy","All four pass"),("rule.gateway","Gateway-unreachable constellation"),
@@ -71,6 +75,16 @@ def diagnose(s):
             skip(id_, title, "Not reached.")
         return _r("NO_FAULT", "no_fault_observed", None,
                   "All four checks passed their thresholds. Nothing was repaired, so this is not a Resolved result.",
+                  [], ck, trace)
+
+    if path_fine:
+        trace.append({"id": "rule.healthy", "title": "Lookup succeeded", "outcome": "fired",
+                      "detail": "The name lookup succeeded and the router answered. Packet loss is not above the fail line."})
+        for id_, title in [("rule.gateway","Gateway-unreachable constellation"),("rule.dns","Isolated DNS resolver failure"),
+                           ("rule.loss","Isolated packet loss"),("rule.latency","Isolated loaded-latency inflation")]:
+            skip(id_, title, "Not reached.")
+        return _r("NO_FAULT", "no_fault_observed", None,
+                  "The name lookup succeeded and the router answered. Nothing was repaired, so this is not a Resolved result.",
                   [], ck, trace)
 
     skip("rule.healthy", "All four pass", "At least one check is outside the pass band.")
