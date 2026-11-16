@@ -48,19 +48,9 @@ def diagnose(s):
 
     missing = [f"{c['id']}: {c['detail']}" for c in ck.values() if c["band"] == "insufficient"]
     conflicts = _contradictions(s, ck)
-    dns_despite_load = (
-        ck["dns"]["band"] == "fail" and ck["gateway"]["band"] == "pass"
-        and ck["packet_loss"]["band"] == "pass" and ck["congestion"]["band"] == "insufficient"
-        and ck["congestion"]["detail"].startswith("Load generator moved only")
-        and len(missing) == 1 and not conflicts)
-    latency_conflict = "Every latency probe timed out while packet loss was inside the pass band."
-    dns_despite_timeout = (
-        ck["dns"]["band"] == "fail" and ck["gateway"]["band"] == "pass"
-        and ck["packet_loss"]["band"] == "pass" and ck["congestion"]["band"] == "timeout"
-        and not missing and conflicts == [latency_conflict])
-    dns_repairable = dns_despite_load or dns_despite_timeout
+    dns_fault = ck["dns"]["band"] == "fail" and ck["gateway"]["band"] == "pass"
 
-    if (missing or conflicts) and not dns_repairable:
+    if (missing or conflicts) and not dns_fault:
         reasons = missing + conflicts
         msg = "Not evaluated. Evidence is incomplete or in conflict."
         for id_, title in [("rule.healthy","All four pass"),("rule.gateway","Gateway-unreachable constellation"),
@@ -98,17 +88,14 @@ def diagnose(s):
     skip("rule.gateway", "Gateway-unreachable constellation", "The four-way outage pattern was not present.")
 
     b = {k: v["band"] for k, v in ck.items()}
-    if dns_repairable or (b["dns"] == "fail" and b["gateway"] == "pass" and b["packet_loss"] == "pass" and b["congestion"] == "pass"):
-        extra = (" Latency probes timed out, so latency is not a second cause." if dns_despite_timeout
-                 else " The loaded-latency download collected no bytes, so it is not a second cause." if dns_despite_load
-                 else " Loaded latency also passed.")
+    if dns_fault or (b["dns"] == "fail" and b["gateway"] == "pass"):
         trace.append({"id": "rule.dns", "title": "Isolated DNS resolver failure", "outcome": "fired",
-                      "detail": "The fresh lookup failed. Gateway and loss passed." + extra})
+                      "detail": "The fresh lookup failed and the router answered. Other checks do not hide that failure."})
         skip("rule.loss", "Isolated packet loss", "DNS pattern already matched.")
         skip("rule.latency", "Isolated loaded-latency inflation", "DNS pattern already matched.")
         return _r("DNS_RESOLVER_FAILURE", "unresolved", "FIX_DNS",
-                  "A fresh lookup failed and the path checks that completed did not explain it. "
-                  "A reversible resolver change can be attempted. Kept only if a full retest passes.",
+                  "A fresh lookup failed and the router answered. "
+                  "A reversible resolver change can be attempted. Kept only if the next lookup succeeds.",
                   [], ck, trace)
     skip("rule.dns", "Isolated DNS resolver failure", "DNS is not a lone fail against three passing checks.")
 

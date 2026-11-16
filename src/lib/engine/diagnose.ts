@@ -110,31 +110,13 @@ export function diagnose(set: MeasurementSet): Diagnosis {
   const conflicts = contradictions(set, checks);
   // The download can move 0 bytes because name lookup is already dead.
   // Gateway and loss still show the path is up, so the lookup failure can be named.
-  const dnsDespiteLoad =
-    checks.dns.band === "fail" &&
-    checks.gateway.band === "pass" &&
-    checks.packet_loss.band === "pass" &&
-    checks.congestion.band === "insufficient" &&
-    checks.congestion.detail.startsWith("Load generator moved only") &&
-    missing.length === 1 &&
-    conflicts.length === 0;
-  // Ping can pass while every TCP timing probe times out. The lookup failure is still measured.
-  const latencyConflict = "Every latency probe timed out while packet loss was inside the pass band.";
-  const dnsDespiteTimeout =
-    checks.dns.band === "fail" &&
-    checks.gateway.band === "pass" &&
-    checks.packet_loss.band === "pass" &&
-    checks.congestion.band === "timeout" &&
-    missing.length === 0 &&
-    conflicts.length === 1 &&
-    conflicts[0] === latencyConflict;
-  const dnsRepairable = dnsDespiteLoad || dnsDespiteTimeout;
+  const dnsFault = checks.dns.band === "fail" && checks.gateway.band === "pass";
 
   const skip = (id: string, title: string, detail: string) => {
     trace.push({ id, title, detail, outcome: "skipped" });
   };
 
-  if ((missing.length > 0 || conflicts.length > 0) && !dnsRepairable) {
+  if ((missing.length > 0 || conflicts.length > 0) && !dnsFault) {
     const reasons = [...missing, ...conflicts];
     skip("rule.healthy", "All four pass", "Not evaluated. Evidence is incomplete or in conflict.");
     skip("rule.gateway", "Gateway-unreachable constellation", "Not evaluated. Evidence is incomplete or in conflict.");
@@ -210,21 +192,12 @@ export function diagnose(set: MeasurementSet): Diagnosis {
   }
   skip("rule.gateway", "Gateway-unreachable constellation", "The four-way outage pattern was not present.");
 
-  const dnsIsolated =
-    dnsRepairable ||
-    (checks.dns.band === "fail" &&
-      checks.gateway.band === "pass" &&
-      checks.packet_loss.band === "pass" &&
-      checks.congestion.band === "pass");
-  if (dnsIsolated) {
+  if (dnsFault) {
     trace.push({
       id: "rule.dns",
       title: "Isolated DNS resolver failure",
-      detail: dnsDespiteTimeout
-        ? "The fresh lookup failed. Gateway and packet loss passed. Latency probes timed out, so latency is not used as a second cause."
-        : dnsDespiteLoad
-          ? "The fresh lookup failed. Gateway and packet loss passed. The loaded-latency download collected no bytes, so it is not used as a second cause."
-          : "The fresh lookup failed while gateway, loss, and loaded latency all passed. The path measurements do not explain the lookup. This does not identify whether the resolver process, the configured server, or a filter is responsible.",
+      detail:
+        "The fresh lookup failed and the router answered. Other checks are not used to hide that lookup failure.",
       outcome: "fired",
     });
     skip("rule.loss", "Isolated packet loss", "DNS pattern already matched.");
@@ -233,11 +206,8 @@ export function diagnose(set: MeasurementSet): Diagnosis {
       finding: "DNS_RESOLVER_FAILURE",
       preliminary: "unresolved",
       recovery: "FIX_DNS",
-      summary: dnsDespiteTimeout
-        ? "A fresh lookup failed. Gateway and packet loss passed. Latency probes timed out. A reversible resolver change can be attempted. It is kept only if a full retest passes."
-        : dnsDespiteLoad
-          ? "A fresh lookup failed. Gateway and packet loss passed. The loaded-latency download collected no bytes. A reversible resolver change can be attempted. It is kept only if a full retest passes."
-          : "A fresh lookup failed and the other three checks passed. A reversible resolver change can be attempted. It is kept only if a full retest passes.",
+      summary:
+        "A fresh lookup failed and the router answered. A reversible resolver change can be attempted. It is kept only if the next lookup succeeds.",
       reasons: [],
       checks,
       trace,

@@ -14,7 +14,7 @@ const expectFinding: Record<string, string> = {
   "gateway-dhcp-fails": "GATEWAY_UNREACHABLE",
   contradictory: "NONE",
   "short-sample": "NONE",
-  "dns-and-loss": "NONE",
+  "dns-and-loss": "DNS_RESOLVER_FAILURE",
   "under-line": "NONE",
   "icmp-filter": "NONE",
 };
