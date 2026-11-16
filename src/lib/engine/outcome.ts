@@ -11,6 +11,22 @@ export interface RecoveryDecision {
  * DNS changes roll back unless that bar is cleared. DHCP renew cannot be undone here.
  */
 export function decideRecoveryOutcome(action: RecoveryAction, after: Diagnosis): RecoveryDecision {
+  if (action === "FIX_DNS") {
+    if (after.checks.dns.band === "pass") {
+      return {
+        verdict: "resolved",
+        rollback: false,
+        detail:
+          "The later lookup succeeded. The new resolvers are kept. Resolved refers only to that lookup, not to every other check.",
+      };
+    }
+    return {
+      verdict: "unresolved",
+      rollback: true,
+      detail:
+        "The later lookup still failed. Previous resolvers must be restored. Status is Unresolved, not Resolved.",
+    };
+  }
   if (after.finding === "NO_FAULT" && after.preliminary === "no_fault_observed") {
     return {
       verdict: "resolved",
@@ -19,14 +35,6 @@ export function decideRecoveryOutcome(action: RecoveryAction, after: Diagnosis):
         action === "FIX_DNS"
           ? "Retest passed every check. The new resolvers are kept. Resolved refers only to that retest, not to a proven root cause."
           : "Retest passed every check after DHCP renew. The lease change cannot be attributed as the cause. Resolved refers only to the retest.",
-    };
-  }
-  if (action === "FIX_DNS") {
-    return {
-      verdict: "unresolved",
-      rollback: true,
-      detail:
-        "Retest did not pass every check. Previous resolvers must be restored. Status is Unresolved, not Resolved.",
     };
   }
   return {

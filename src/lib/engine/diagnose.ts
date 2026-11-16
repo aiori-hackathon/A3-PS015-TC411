@@ -108,12 +108,22 @@ export function diagnose(set: MeasurementSet): Diagnosis {
 
   const missing = insufficientReasons(checks);
   const conflicts = contradictions(set, checks);
+  const routerAnswered =
+    checks.gateway.band === "pass" || checks.gateway.band === "degraded";
+  const lossNotFailed =
+    checks.packet_loss.band === "pass" || checks.packet_loss.band === "degraded";
+  const dnsFault = checks.dns.band === "fail" && routerAnswered;
+  const pathFine =
+    checks.dns.band === "pass" &&
+    routerAnswered &&
+    lossNotFailed &&
+    checks.congestion.band !== "fail";
 
   const skip = (id: string, title: string, detail: string) => {
     trace.push({ id, title, detail, outcome: "skipped" });
   };
 
-  if (missing.length > 0 || conflicts.length > 0) {
+  if ((missing.length > 0 || conflicts.length > 0) && !dnsFault && !pathFine) {
     const reasons = [...missing, ...conflicts];
     skip("rule.healthy", "All four pass", "Not evaluated. Evidence is incomplete or in conflict.");
     skip("rule.gateway", "Gateway-unreachable constellation", "Not evaluated. Evidence is incomplete or in conflict.");
@@ -163,6 +173,30 @@ export function diagnose(set: MeasurementSet): Diagnosis {
     });
   }
 
+  if (pathFine) {
+    trace.push({
+      id: "rule.healthy",
+      title: "Lookup succeeded",
+      detail:
+        "The name lookup succeeded and the router answered. Packet loss is not above the fail line. A timed-out latency check is not treated as a second fault.",
+      outcome: "fired",
+    });
+    skip("rule.gateway", "Gateway-unreachable constellation", "Not reached.");
+    skip("rule.dns", "Isolated DNS resolver failure", "Not reached.");
+    skip("rule.loss", "Isolated packet loss", "Not reached.");
+    skip("rule.latency", "Isolated loaded-latency inflation", "Not reached.");
+    return build({
+      finding: "NO_FAULT",
+      preliminary: "no_fault_observed",
+      recovery: null,
+      summary:
+        "The name lookup succeeded and the router answered. Nothing was repaired, so this is not a Resolved result.",
+      reasons: [],
+      checks,
+      trace,
+    });
+  }
+
   skip("rule.healthy", "All four pass", "At least one check is outside the pass band.");
 
   if (isConstellation(set, checks)) {
@@ -189,17 +223,12 @@ export function diagnose(set: MeasurementSet): Diagnosis {
   }
   skip("rule.gateway", "Gateway-unreachable constellation", "The four-way outage pattern was not present.");
 
-  const dnsIsolated =
-    checks.dns.band === "fail" &&
-    checks.gateway.band === "pass" &&
-    checks.packet_loss.band === "pass" &&
-    checks.congestion.band === "pass";
-  if (dnsIsolated) {
+  if (dnsFault) {
     trace.push({
       id: "rule.dns",
       title: "Isolated DNS resolver failure",
       detail:
-        "The fresh lookup failed while gateway, loss, and loaded latency all passed. The path measurements do not explain the lookup. This does not identify whether the resolver process, the configured server, or a filter is responsible.",
+        "The fresh lookup failed and the router answered. Other checks are not used to hide that lookup failure.",
       outcome: "fired",
     });
     skip("rule.loss", "Isolated packet loss", "DNS pattern already matched.");
@@ -209,7 +238,7 @@ export function diagnose(set: MeasurementSet): Diagnosis {
       preliminary: "unresolved",
       recovery: "FIX_DNS",
       summary:
-        "A fresh lookup failed and the other three checks passed. A reversible resolver change can be attempted. It is kept only if a full retest passes.",
+        "A fresh lookup failed and the router answered. A reversible resolver change can be attempted. It is kept only if the next lookup succeeds.",
       reasons: [],
       checks,
       trace,

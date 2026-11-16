@@ -120,10 +120,10 @@ def _build():
         None,"NONE","inconclusive","edge case"))
 
     at = "2026-10-25T09:30:00.000Z"
-    s.append(Scenario("dns-and-loss","Lookup timeout and loss together","Two signals, no single cause.",
+    s.append(Scenario("dns-and-loss","Lookup timeout and loss together","Two signals. The router answered, so the lookup failure is still named.",
         _set("both-before","DNS timeout with loss",at,gw(at,"192.168.1.1",4,GW),
              dns(at,"192.168.1.1",False,5000),loss(at,50,41),cong(at,IDLE,MILD)),
-        None,"NONE","inconclusive","edge case"))
+        None,"DNS_RESOLVER_FAILURE","unresolved","edge case"))
 
     at = "2026-10-25T09:40:00.000Z"
     s.append(Scenario("under-line","Elevated, under the fail lines","All somewhat high but no fail threshold crossed.",

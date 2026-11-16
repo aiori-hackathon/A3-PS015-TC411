@@ -1,4 +1,4 @@
-import os, socket, threading, time, urllib.request
+import os, socket, ssl, threading, time, urllib.request
 from typing import List, Optional, Tuple
 from ..models import CongestionMeasurement
 from ..stats import median
@@ -7,16 +7,34 @@ from .gateway import _iso
 TARGET   = os.environ.get("PROBESPEAK_CONG_TARGET", "1.1.1.1")
 PORT     = 443
 LOAD_URL = os.environ.get("PROBESPEAK_LOAD_URL", "https://speed.cloudflare.com/__down?bytes=100000000")
+# These two addresses are used only when the name above cannot be resolved.
+# A DNS fault must not erase the latency measurement.
+IP_LOAD_URLS = ("https://1.1.1.1/", "https://1.0.0.1/")
 ATTEMPTS = 6; CONNECT_TIMEOUT_S = 1.0; SPACING_S = 0.2
 LOAD_STREAMS = 4; RAMP_S = 1.2; MIN_LOAD_BYTES = 1_000_000; MAX_LOAD_S = 15
 
 def tcp_rtt(host=TARGET, port=PORT, timeout_s=CONNECT_TIMEOUT_S):
+    # After the first blocked connection, do not wait another second on every sample.
+    if getattr(tcp_rtt, "use_ping", False):
+        return _ping_rtt(host)
     t0 = time.perf_counter()
     try:
         with socket.create_connection((host, port), timeout=timeout_s): pass
     except ConnectionRefusedError: pass
-    except OSError: return None
+    except OSError:
+        tcp_rtt.use_ping = True
+        return _ping_rtt(host)
     return round((time.perf_counter() - t0) * 1000, 1)
+
+def _ping_rtt(host):
+    try:
+        from .ping import ping_once
+        from ..runner import Runner
+        reply = ping_once(Runner(), host, timeout_s=1.0)
+    except Exception:
+        return None
+    if not reply.ok or reply.rtt_ms is None: return None
+    return round(reply.rtt_ms, 1)
 
 def _series(n, probe=tcp_rtt):
     got, timeouts = [], 0
@@ -27,20 +45,35 @@ def _series(n, probe=tcp_rtt):
         if i < n - 1: time.sleep(SPACING_S)
     return got, timeouts
 
+def _read_into(resp, stop, deadline, add, limit):
+    while not stop.is_set() and time.monotonic() < deadline:
+        if limit is not None and limit(): break
+        chunk = resp.read(65536)
+        if not chunk: return False
+        add(len(chunk))
+    return True
+
 class Load:
     def __init__(self, url=LOAD_URL, streams=LOAD_STREAMS):
         self.url, self.streams, self.bytes = url, streams, 0
         self._lock = threading.Lock(); self._stop = threading.Event(); self._threads = []
+    def _add(self, n):
+        with self._lock: self.bytes += n
+    def _pull_url(self, url, deadline, context=None):
+        req = urllib.request.Request(url, headers={"User-Agent": "probespeak-agent"})
+        with urllib.request.urlopen(req, timeout=5, context=context) as resp:
+            _read_into(resp, self._stop, deadline, self._add, None)
     def _run(self):
+        # Do not start with the hostname. A dead resolver blocks that request
+        # for several seconds and the latency check then has no bytes.
         deadline = time.monotonic() + MAX_LOAD_S
-        try:
-            req = urllib.request.Request(self.url, headers={"User-Agent": "probespeak-agent"})
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                while not self._stop.is_set() and time.monotonic() < deadline:
-                    chunk = resp.read(65536)
-                    if not chunk: break
-                    with self._lock: self.bytes += len(chunk)
-        except Exception: pass
+        ctx = ssl._create_unverified_context()
+        while not self._stop.is_set() and time.monotonic() < deadline:
+            for url in IP_LOAD_URLS:
+                if self._stop.is_set() or time.monotonic() >= deadline:
+                    return
+                try: self._pull_url(url, deadline, ctx)
+                except Exception: continue
     def __enter__(self):
         for _ in range(self.streams):
             t = threading.Thread(target=self._run, daemon=True); t.start(); self._threads.append(t)
@@ -53,6 +86,7 @@ def blank(reason):
                                  reason, TARGET, None, None, None, None, None, None, None, None, [], [])
 
 def measure(probe=tcp_rtt, load_factory=Load, attempts=ATTEMPTS):
+    tcp_rtt.use_ping = False
     at = _iso(); unloaded, ut = _series(attempts, probe)
     load = load_factory()
     with load:

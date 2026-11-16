@@ -90,6 +90,54 @@ def default_iface_linux(runner):
         res = runner.run(["ip", "-4", "route", "show", "default"], 5)
         m = re.search(r"dev (\S+)", res.text); return m.group(1) if m else None
 
+def mac_service(runner):
+    res = runner.run(["networksetup", "-listallhardwareports"], 6)
+    wifi = None
+    first = None
+    port = None
+    for line in res.stdout.splitlines():
+        if line.startswith("Hardware Port:"):
+            port = line.split(":", 1)[1].strip()
+        elif line.startswith("Device:") and port:
+            if first is None and port not in ("Bluetooth PAN", "Thunderbolt Bridge"):
+                first = port
+            if "wi-fi" in port.lower() or port.lower() == "wifi":
+                wifi = port
+            port = None
+    return wifi or first or "Wi-Fi"
+
+class MacNetworksetupBackend(DnsBackend):
+    name = "networksetup"
+    def __init__(self, runner, service=None):
+        self.r = runner
+        self.service = service or mac_service(runner)
+    def read(self):
+        res = self.r.run(["networksetup", "-getdnsservers", self.service], 8)
+        _check(res, "networksetup get DNS")
+        text = res.stdout.strip()
+        if "aren't any DNS" in text:
+            return DnsState(self.service, [], True)
+        servers = []
+        for line in text.splitlines():
+            tok = line.strip()
+            if not tok: continue
+            try: servers.append(str(ipaddress.ip_address(tok)))
+            except ValueError: raise BackendError(f"Unexpected DNS line: {tok[:80]}")
+        return DnsState(self.service, servers, False)
+    def apply(self, state, servers):
+        _check(self.r.run(["networksetup", "-setdnsservers", self.service, *_ips(servers)], 15),
+               "networksetup set DNS")
+    def restore(self, state):
+        if state.dhcp_supplied or not state.servers:
+            _check(self.r.run(["networksetup", "-setdnsservers", self.service, "Empty"], 15),
+                   "networksetup clear DNS")
+        else:
+            self.apply(state, state.servers)
+    def flush(self):
+        a = self.r.run(["dscacheutil", "-flushcache"], 8)
+        b = self.r.run(["killall", "-HUP", "mDNSResponder"], 8)
+        return a.returncode == 0 and b.returncode == 0
+
 def pick_backend(runner, system):
     if system == "Linux":
         iface = default_iface_linux(runner)
@@ -98,4 +146,5 @@ def pick_backend(runner, system):
         except Exception: return DnsBackend()
         return LinuxResolvedBackend(runner, iface) if res.returncode == 0 else DnsBackend()
     if system == "Windows": return WindowsBackend(runner)
+    if system == "Darwin": return MacNetworksetupBackend(runner)
     return DnsBackend()

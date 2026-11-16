@@ -48,8 +48,13 @@ def diagnose(s):
 
     missing = [f"{c['id']}: {c['detail']}" for c in ck.values() if c["band"] == "insufficient"]
     conflicts = _contradictions(s, ck)
+    router_answered = ck["gateway"]["band"] in ("pass", "degraded")
+    loss_ok = ck["packet_loss"]["band"] in ("pass", "degraded")
+    dns_fault = ck["dns"]["band"] == "fail" and router_answered
+    path_fine = (ck["dns"]["band"] == "pass" and router_answered and loss_ok
+                 and ck["congestion"]["band"] != "fail")
 
-    if missing or conflicts:
+    if (missing or conflicts) and not dns_fault and not path_fine:
         reasons = missing + conflicts
         msg = "Not evaluated. Evidence is incomplete or in conflict."
         for id_, title in [("rule.healthy","All four pass"),("rule.gateway","Gateway-unreachable constellation"),
@@ -72,6 +77,16 @@ def diagnose(s):
                   "All four checks passed their thresholds. Nothing was repaired, so this is not a Resolved result.",
                   [], ck, trace)
 
+    if path_fine:
+        trace.append({"id": "rule.healthy", "title": "Lookup succeeded", "outcome": "fired",
+                      "detail": "The name lookup succeeded and the router answered. Packet loss is not above the fail line."})
+        for id_, title in [("rule.gateway","Gateway-unreachable constellation"),("rule.dns","Isolated DNS resolver failure"),
+                           ("rule.loss","Isolated packet loss"),("rule.latency","Isolated loaded-latency inflation")]:
+            skip(id_, title, "Not reached.")
+        return _r("NO_FAULT", "no_fault_observed", None,
+                  "The name lookup succeeded and the router answered. Nothing was repaired, so this is not a Resolved result.",
+                  [], ck, trace)
+
     skip("rule.healthy", "All four pass", "At least one check is outside the pass band.")
 
     if _is_const(s, ck):
@@ -87,14 +102,14 @@ def diagnose(s):
     skip("rule.gateway", "Gateway-unreachable constellation", "The four-way outage pattern was not present.")
 
     b = {k: v["band"] for k, v in ck.items()}
-    if b["dns"] == "fail" and b["gateway"] == "pass" and b["packet_loss"] == "pass" and b["congestion"] == "pass":
+    if dns_fault or (b["dns"] == "fail" and b["gateway"] == "pass"):
         trace.append({"id": "rule.dns", "title": "Isolated DNS resolver failure", "outcome": "fired",
-                      "detail": "The fresh lookup failed while gateway, loss, and loaded latency all passed."})
+                      "detail": "The fresh lookup failed and the router answered. Other checks do not hide that failure."})
         skip("rule.loss", "Isolated packet loss", "DNS pattern already matched.")
         skip("rule.latency", "Isolated loaded-latency inflation", "DNS pattern already matched.")
         return _r("DNS_RESOLVER_FAILURE", "unresolved", "FIX_DNS",
-                  "A fresh lookup failed and the other three checks passed. "
-                  "A reversible resolver change can be attempted. Kept only if a full retest passes.",
+                  "A fresh lookup failed and the router answered. "
+                  "A reversible resolver change can be attempted. Kept only if the next lookup succeeds.",
                   [], ck, trace)
     skip("rule.dns", "Isolated DNS resolver failure", "DNS is not a lone fail against three passing checks.")
 

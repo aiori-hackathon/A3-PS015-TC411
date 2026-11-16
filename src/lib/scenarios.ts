@@ -322,7 +322,7 @@ export const SCENARIOS: Scenario[] = [
   {
     id: "dns-and-loss",
     title: "Lookup timeout and loss together",
-    situation: "Fresh lookup times out and ICMP loss is 18% in the same window.",
+    situation: "Fresh lookup times out and ICMP loss is 18%. The router answered, so the lookup failure is still named.",
     before: both,
     retest: null,
   },

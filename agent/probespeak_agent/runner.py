@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from typing import Sequence
 
 ALLOWED = {"ping","ip","route","powershell","ipconfig","netsh",
-           "resolvectl","nmcli","networkctl","networksetup"}
+           "resolvectl","nmcli","networkctl","networksetup",
+           "dscacheutil","killall"}
 
 class RunnerError(Exception): pass
 

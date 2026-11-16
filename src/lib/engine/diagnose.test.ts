@@ -14,7 +14,7 @@ const expectFinding: Record<string, string> = {
   "gateway-dhcp-fails": "GATEWAY_UNREACHABLE",
   contradictory: "NONE",
   "short-sample": "NONE",
-  "dns-and-loss": "NONE",
+  "dns-and-loss": "DNS_RESOLVER_FAILURE",
   "under-line": "NONE",
   "icmp-filter": "NONE",
 };
@@ -54,6 +54,32 @@ test("resolved is impossible unless the retest is clean", () => {
   const gwFail = decideRecoveryOutcome("RENEW_DHCP", diagnose(gwBad.retest!));
   assert.equal(gwFail.verdict, "unresolved");
   assert.equal(gwFail.rollback, false);
+});
+
+test("a dead resolver is still named when latency probes time out", () => {
+  const scenario = SCENARIOS.find((s) => s.id === "dns-fix-verifies")!;
+  const set = structuredClone(scenario.before);
+  set.congestion.unloadedSamples = 0;
+  set.congestion.loadedSamples = 0;
+  set.congestion.unloadedTimeouts = set.congestion.unloadedAttempts;
+  set.congestion.loadedTimeouts = set.congestion.loadedAttempts;
+  set.congestion.unloadedRttMs = null;
+  set.congestion.loadedRttMs = null;
+  set.congestion.rawUnloadedMs = [];
+  set.congestion.rawLoadedMs = [];
+  const d = diagnose(set);
+  assert.equal(d.finding, "DNS_RESOLVER_FAILURE");
+  assert.equal(d.recovery, "FIX_DNS");
+});
+
+test("a dead resolver is still named when the download moves no bytes", () => {
+  const scenario = SCENARIOS.find((s) => s.id === "dns-fix-verifies")!;
+  const set = structuredClone(scenario.before);
+  set.congestion.insufficientReason =
+    "Load generator moved only 0 bytes (needs 1000000). Loaded samples not valid.";
+  const d = diagnose(set);
+  assert.equal(d.finding, "DNS_RESOLVER_FAILURE");
+  assert.equal(d.recovery, "FIX_DNS");
 });
 
 test("a tampered loss percentage is not diagnosed", () => {
